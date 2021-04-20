@@ -1,0 +1,13 @@
+{
+  "name": "selelabot-discord",
+  "version": "0.1.0",
+  "description": "Discord Bot for Sophia Electronics Lab",
+  "main": "index.js",
+  "author": "stepney141 <stepney141andi.c.i@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "discord.js": "^12.5.3",
+    "fs": "^0.0.1-security"
+  },
+  "type": "module"
+}
