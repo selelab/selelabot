@@ -23,17 +23,15 @@ client.on('message', message => {
     const args = message.content.slice(prefix.length).split(/ +/);
     const command = args.shift().toLowerCase();
 
-    if (command === 'ping') {
-        client.commands.get('ping').execute(message, args);
-    } else if (command === 'userinfo') {
-        client.commands.get('userinfo').execute(message, args);
-    } else if (command === 'serverinfo') {
-        client.commands.get('serverinfo').execute(message, args);
-    } else if (command === 'server') {
-        client.commands.get('server').execute(message, args);
-    } else if (command === 'kick') {
-        client.commands.get('kick').execute(message, args);
-    } else message.channel.send('Invalid command.');
+    if (!client.commands.has(command)) {
+        return message.reply('Such a command does not exist!');
+    }
+    try {
+        client.commands.get(command).execute(message, args);
+    } catch (e) {
+        console.error(e);
+        message.reply('there was an error trying to execute that command!');
+    }
 });
 
 client.login(token); // ログイン
