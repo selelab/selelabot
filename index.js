@@ -1,13 +1,18 @@
 const Discord = require('discord.js');
 const fs = require('fs');
 
-const config = JSON.parse(fs.readFileSync('./env.json')); //設定ファイルの読み込み
+const config = JSON.parse(fs.readFileSync('./setting/env.json')); //設定ファイルの読み込み
+const grade_list = require('./setting/selelab.json');
+
 const { token, prefix, guild_id } = config;
 const client = new Discord.Client({
     ws: {
         intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MEMBERS', 'GUILD_PRESENCES'] //Gateway Intentの有効化・指定
     }
 }); // Discordクライアントの作成
+
+/* 一定時間だけ非同期で処理を待つ(単位：秒) */
+const sleep = async (seconds) => new Promise((resolve, reject) => { setTimeout(() => { resolve(); }, seconds * 1000); });
 
 /* 別ディレクトリに格納してあるコマンドファイル群関係の記述 */
 client.commands = new Discord.Collection(); //コマンド一覧を格納するためのCollectionを作成
@@ -46,8 +51,8 @@ client.on('message', message => {
 });
 
 /* サーバに誰かが新規参加した時の動作 */
-client.on('guildMemberUpdate', member => {
-    console.log(`${member.displayName} がサーバ "${member.guild.name}" に参加しました`);
+client.on('guildMemberAdd', async (member) => {
+    console.log(`${member.displayName}がサーバ"${member.guild.name}"に参加しました`);
     
     if (member.guild.id !== guild_id) {
         return console.error("Another guild is specified");
@@ -57,34 +62,65 @@ client.on('guildMemberUpdate', member => {
         return console.error("当該ユーザはbotです");
     }
 
-    /* チャンネル名で特定のチャンネルを指定し、そこで役職付与プロトコルを開始 */
+    /* チャンネル名の完全一致で特定のチャンネルを指定し、そこで役職付与プロトコルを開始 */
     const welcomeChannel = client.guilds.cache.get(guild_id).channels.cache.find(channel => channel.name === 'テストチャンネルその1');
     if (!welcomeChannel) {
         return console.error("該当するチャンネルが見つかりませんでした");
     }
 
     /* メンションを飛ばす */
-    welcomeChannel.send(`${member}さん、${member.guild.name}へようこそ！\nチャット上であなたが誰なのか識別できるようにするため、最初にあなたの学年や所属を登録する必要がありますので、必ず以下の質問に答えて下さい！`);
+    welcomeChannel.send(`${member}さん、${member.guild.name}へようこそ！\n
+    チャット上であなたが誰なのか識別できるようにするため、最初にあなたの学年や所属を登録する必要があります。\n
+    必ず以下の質問に答えて下さい！`);
 
-    /* 会員種別の識別を確認 */
-    // welcomeChannel.send(`質問その1\n${member}さん、あなたは`);
+    await sleep(2); //2秒待つ
 
     /* 役職付与 */
-    welcomeChannel.send(`質問そのn\n${member}さん、あなたは何年生ですか？\n次の選択肢の中から対応する数字を選んで、その数字を**半角数字で**入力して下さい！`);
-    const exampleEmbed = new Discord.MessageEmbed()
+    welcomeChannel.send(`Q. ${member}さん、あなたは何年生ですか？\n
+    次の選択肢の中からあなたの現在の学年に対応する番号を選び、その番号を__**半角数字1個だけで**__ここに投稿して下さい！`);
+    const gradeEmbed = new Discord.MessageEmbed()
         .setColor('#0099ff')
-        .setDescription('description')
+        .setTitle('あなたの現在の学年に対応する番号を投稿して下さい')
+        .setDescription('入力するのは半角数字一個だけです。日本語とか記号とかは入力しないで下さい')
         .addFields(
-            { name: 1, value: '1年生' },
-            { name: 2, value: '2年生'},
-            { name: 3, value: '3年生'},
+            { name: `${grade_list.GRADE.FIRST}なら`, value: '1 と入力'},
+            { name: `${grade_list.GRADE.SECOND}なら`, value: '2 と入力' },
+            { name: `${grade_list.GRADE.THIRD}なら`, value: '3 と入力' },
+            { name: `${grade_list.GRADE.FOURTH}なら`, value: '4 と入力' },
+            { name: `${grade_list.GRADE.GRADUATED}なら`, value: '5 と入力' },
         );
-    welcomeChannel.send(exampleEmbed);
+    welcomeChannel.send(gradeEmbed);
 
-    // const mainChannel = client.guilds.cache.get(guild_id).channels.cache.find(channel => channel.name === 'main');
-    // if (!mainChannel) {
-    //     return console.error("該当するチャンネルが見つかりませんでした");
-    // }
+    const msgFilter = msg => {
+        return (msg.author.id === member.id && msg.content.match(/^[12345]$/)) ? true : false;
+        //「新しく参加したメンバーの投稿である」かつ「1から5までの半角数字のどれか一つだけを含む」 => 条件に合致
+    };
+    welcomeChannel.awaitMessages(msgFilter, { max: 1, time: 2 * 60 * 1000 })
+    // Promiseを解決すると、収集できたメッセージのCollectionを得られる
+        .then(collected => {
+            console.log('メッセージ: ' + collected.first().content); //collected.first()で取得できたメッセージを取得してログに出す
+            
+            try {
+                const grade_number = Number(collected.first().content);
+                const grade_name = grade_list.ROLE.find(data => data.NUM === grade_number);
+                const grade_role = member.guild.roles.cache.find(role => role.name === grade_name.GRADE);
+
+                member.roles.add(grade_role); //対応する学年役職を参加メンバーに追加
+
+                /* 別のチャンネルで新規参加者のことをお知らせする */
+                const infoChannel = client.guilds.cache.get(guild_id).channels.cache.find(channel => channel.name === 'テストチャンネルその1');
+                if (!infoChannel) {
+                    return console.error("該当するチャンネルが見つかりませんでした");
+                }
+                infoChannel.send(`${member}さん、あなたを${grade_role}として登録しました`);   
+            } catch (e) {
+                console.log(e);
+            }
+        })
+        .catch(collected => {
+            if (!collected.size) return console.log('メッセージが送信されませんでした(タイムアウト)');
+            //何も収集できなかった場合を弾く(collected.sizeは取得できた個数、つまりこれは0のときを弾く)
+        });
 });
 
 client.login(token); //ログイン

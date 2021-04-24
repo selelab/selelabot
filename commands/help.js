@@ -1,5 +1,5 @@
 const fs = require('fs');
-const { prefix } = JSON.parse(fs.readFileSync('./env.json'));
+const { prefix } = JSON.parse(fs.readFileSync('./setting/env.json'));
 
 module.exports = {
     name: 'help',
