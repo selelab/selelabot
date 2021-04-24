@@ -3,7 +3,11 @@ const fs = require('fs');
 
 const config = JSON.parse(fs.readFileSync('./env.json')); //設定ファイルの読み込み
 const { token, prefix, guild_id } = config;
-const client = new Discord.Client(); // Discordクライアントの作成
+const client = new Discord.Client({
+    ws: {
+        intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MEMBERS', 'GUILD_PRESENCES'] //Gateway Intentの有効化・指定
+    }
+}); // Discordクライアントの作成
 
 /* 別ディレクトリに格納してあるコマンドファイル群関係の記述 */
 client.commands = new Discord.Collection(); //コマンド一覧を格納するためのCollectionを作成
