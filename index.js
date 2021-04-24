@@ -2,7 +2,7 @@ const Discord = require('discord.js');
 const fs = require('fs');
 
 const config = JSON.parse(fs.readFileSync('./env.json')); //設定ファイルの読み込み
-const { token, prefix } = config;
+const { token, prefix, guild_id } = config;
 const client = new Discord.Client(); // Discordクライアントの作成
 
 /* 別ディレクトリに格納してあるコマンドファイル群関係の記述 */
@@ -42,9 +42,24 @@ client.on('message', message => {
 });
 
 /* サーバに誰かが新規参加した時の動作 */
-client.on('guildMemberAdd', member => {
-    console.log(`${member.displayName} joined the ${member.guild.name} server`);
+client.on('message', member => {
+    console.log(`${member.user} joined the ${member.guild.name} server`);
     
+    if (member.guild.id !== guild_id) {
+        return console.error("Another guild is specified");
+    }
+
+    const welcomeChannel = client.guilds.cache.get(guild_id).channels.cache.find(channel => channel.name === 'ようこそ');
+    if (!welcomeChannel) {
+        return console.error("Cannot find the channel");
+    }
+    welcomeChannel.send(`${member}さん、${member.guild.name}へようこそ！`);
+
+    /* 新規参加者が最初に入ってきたチャンネルで、役職付与プロトコルを開始 */
+
+    /* メンションを飛ばす */
+
+    /* 役職付与 */
 });
 
 client.login(token); //ログイン
