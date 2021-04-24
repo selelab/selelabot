@@ -46,24 +46,45 @@ client.on('message', message => {
 });
 
 /* サーバに誰かが新規参加した時の動作 */
-client.on('message', member => {
-    console.log(`${member.user} joined the ${member.guild.name} server`);
+client.on('guildMemberUpdate', member => {
+    console.log(`${member.displayName} がサーバ "${member.guild.name}" に参加しました`);
     
     if (member.guild.id !== guild_id) {
         return console.error("Another guild is specified");
     }
 
-    const welcomeChannel = client.guilds.cache.get(guild_id).channels.cache.find(channel => channel.name === 'ようこそ');
-    if (!welcomeChannel) {
-        return console.error("Cannot find the channel");
+    if (member.user.bot) {
+        return console.error("当該ユーザはbotです");
     }
-    welcomeChannel.send(`${member}さん、${member.guild.name}へようこそ！`);
 
-    /* 新規参加者が最初に入ってきたチャンネルで、役職付与プロトコルを開始 */
+    /* チャンネル名で特定のチャンネルを指定し、そこで役職付与プロトコルを開始 */
+    const welcomeChannel = client.guilds.cache.get(guild_id).channels.cache.find(channel => channel.name === 'テストチャンネルその1');
+    if (!welcomeChannel) {
+        return console.error("該当するチャンネルが見つかりませんでした");
+    }
 
     /* メンションを飛ばす */
+    welcomeChannel.send(`${member}さん、${member.guild.name}へようこそ！\nチャット上であなたが誰なのか識別できるようにするため、最初にあなたの学年や所属を登録する必要がありますので、必ず以下の質問に答えて下さい！`);
+
+    /* 会員種別の識別を確認 */
+    // welcomeChannel.send(`質問その1\n${member}さん、あなたは`);
 
     /* 役職付与 */
+    welcomeChannel.send(`質問そのn\n${member}さん、あなたは何年生ですか？\n次の選択肢の中から対応する数字を選んで、その数字を**半角数字で**入力して下さい！`);
+    const exampleEmbed = new Discord.MessageEmbed()
+        .setColor('#0099ff')
+        .setDescription('description')
+        .addFields(
+            { name: 1, value: '1年生' },
+            { name: 2, value: '2年生'},
+            { name: 3, value: '3年生'},
+        );
+    welcomeChannel.send(exampleEmbed);
+
+    // const mainChannel = client.guilds.cache.get(guild_id).channels.cache.find(channel => channel.name === 'main');
+    // if (!mainChannel) {
+    //     return console.error("該当するチャンネルが見つかりませんでした");
+    // }
 });
 
 client.login(token); //ログイン
