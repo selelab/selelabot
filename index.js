@@ -54,7 +54,18 @@ client.on('message', message => {
 
 /* サーバに誰かが新規参加した時の動作 */
 client.on('guildMemberAdd', async (member) => {
-    auto_role_adder.execute(client, member, guild_id);
+    auto_role_adder.execute(client, member, guild_id); //役職自動付与プロトコル
+});
+
+/* サーバから誰かが脱退した時の動作 */
+client.on('guildMemberRemove', (member) => {
+    // 設定ファイルで指定されたチャンネルに脱退者の通知を送信
+    const infoChannel = client.guilds.cache.get(guild_id).channels.cache.find(channel => channel.name === server_setting.CHANNEL.INFO);
+    if (!infoChannel) {
+        return console.error("[guildMemberRemove] 該当するチャンネルが見つかりませんでした");
+    }
+    infoChannel.send(`${member.user.username}さんがサーバから脱退しました`);
+    console.log(`[guildMemberRemove] ${member.user.username}さんがサーバ"${member.guild.name}"から脱退しました`);
 });
 
 client.login(token); //ログイン

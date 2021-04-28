@@ -5,16 +5,17 @@ const sleep = async (seconds) => new Promise((resolve, reject) => { setTimeout((
 
 module.exports = {
     async execute(client, member, guild_id) {
-        console.log(`${member.displayName}がサーバ"${member.guild.name}"に参加しました`);
+        console.log(`[guildMemberAdd] ${member.displayName}さんがサーバ"${member.guild.name}"に参加しました`);
+        console.log("[guildMemberAdd] 役職自動付与プロトコル：開始");
 
         if (member.user.bot) {
-            return console.error("当該ユーザはbotです");
+            return console.error("[guildMemberAdd] 当該ユーザはbotです");
         }
 
         /* チャンネル名の完全一致で特定のチャンネルを指定し、そこで役職付与プロトコルを開始 */
         const welcomeChannel = client.guilds.cache.get(guild_id).channels.cache.find(channel => channel.name === server_setting.CHANNEL.WELCOME);
         if (!welcomeChannel) {
-            return console.error("該当するチャンネルが見つかりませんでした");
+            return console.error("[guildMemberAdd] 該当するチャンネルが見つかりませんでした");
         }
 
         /* メンションを飛ばす */
@@ -45,11 +46,10 @@ module.exports = {
             return (msg.author.id === member.id && msg.content.match(/^[12345]$/)) ? true : false;
             //「新しく参加したメンバーの投稿である」かつ「1から5までの半角数字のどれか一つだけを含む」 => 条件に合致
         };
-        welcomeChannel.awaitMessages(msgFilter, { max: 1, time: 2 * 60 * 1000 })
+        welcomeChannel.awaitMessages(msgFilter, { max: 1, time: 5 * 60 * 1000 })
         // Promiseを解決すると、収集できたメッセージのCollectionを得られる
             .then(collected => {
-                console.log('送信された番号: ' + collected.first().content); //collected.first()で取得できたメッセージを取得してログに出す
-                
+                console.log('[guildMemberAdd] 送信された番号: ' + collected.first().content); //collected.first()で取得できたメッセージを取得してログに出す
                 try {
                     const grade_number = Number(collected.first().content);
                     const grade_name = server_setting.ROLE.find(data => data.NUM === grade_number);
@@ -60,15 +60,19 @@ module.exports = {
                     /* 別のチャンネルで新規参加者のことをお知らせする */
                     const infoChannel = client.guilds.cache.get(guild_id).channels.cache.find(channel => channel.name === server_setting.CHANNEL.INFO);
                     if (!infoChannel) {
-                        return console.error("該当するチャンネルが見つかりませんでした");
+                        throw Error("[guildMemberAdd] 該当するチャンネルが見つかりませんでした");
                     }
                     infoChannel.send(`${member}さん、上智エレラボへようこそ！あなたを${grade_role}として登録しました。`);
+
+                    console.log("[guildMemberAdd] 役職自動付与プロトコル：終了");
                 } catch (e) {
                     console.log(e);
+                    welcomeChannel.send("処理中にエラーが発生しました");
                 }
             })
             .catch(collected => {
                 if (!collected.size) return console.log('メッセージが送信されませんでした(タイムアウト)');
+                welcomeChannel.send("5分以内に操作を確認できなかったため、役職自動付与プロトコルを自動終了します");
                 //何も収集できなかった場合を弾く(collected.sizeは取得できた個数、つまりこれは0のときを弾く)
             });        
     }
