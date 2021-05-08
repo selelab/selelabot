@@ -6,7 +6,7 @@ const sleep = async (seconds) => new Promise((resolve, reject) => { setTimeout((
 module.exports = {
     async execute(client, member, guild_id) {
         console.log(`[guildMemberAdd] ${member.displayName}さんがサーバ"${member.guild.name}"に参加しました`);
-        console.log("[guildMemberAdd] 役職自動付与プロトコル：開始");
+        console.log(`[guildMemberAdd] 役職自動付与プロトコル_開始：${member.guild.name}`);
 
         if (member.user.bot) {
             return console.error("[guildMemberAdd] 当該ユーザはbotです");

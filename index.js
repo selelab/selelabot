@@ -3,7 +3,7 @@ const fs = require('fs');
 
 const config = JSON.parse(fs.readFileSync('./setting/env.json')); //ログイン情報類の読み込み
 const server_setting = require('./setting/selelab.json'); //各サーバ固有の設定の読み込み
-const { token, prefix, guild_id } = config;
+const { token, prefix } = config;
 
 const auto_role_adder = require('./exports/autorole.js'); //役職自動付与プロトコル用のコード
 
@@ -54,13 +54,13 @@ client.on('message', message => {
 
 /* サーバに誰かが新規参加した時の動作 */
 client.on('guildMemberAdd', async (member) => {
-    auto_role_adder.execute(client, member, guild_id); //役職自動付与プロトコル
+    auto_role_adder.execute(client, member, member.guild.id); //役職自動付与プロトコル
 });
 
 /* サーバから誰かが脱退した時の動作 */
 client.on('guildMemberRemove', (member) => {
     // 設定ファイルで指定されたチャンネルに脱退者の通知を送信
-    const infoChannel = client.guilds.cache.get(guild_id).channels.cache.find(channel => channel.name === server_setting.CHANNEL.INFO);
+    const infoChannel = client.guilds.cache.get(member.guild.id).channels.cache.find(channel => channel.name === server_setting.CHANNEL.INFO);
     if (!infoChannel) {
         return console.error("[guildMemberRemove] 該当するチャンネルが見つかりませんでした");
     }
