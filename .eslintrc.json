@@ -23,6 +23,7 @@
             "always"
         ],
         "no-path-concat": 0,
-         "no-unused-vars": 0
+        "no-unused-vars": 0,
+        "no-irregular-whitespace": 0
     }
 }

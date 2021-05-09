@@ -35,7 +35,7 @@ client.on('message', message => {
 
     if (!message.content.startsWith(prefix) || message.author.bot) return; //「投稿にコマンドのprefixがついていない」または「botによる投稿である」 => 無視
 
-    const args = message.content.slice(prefix.length).split(/ +/); //引数一覧を取得
+    const args = message.content.slice(prefix.length).split(/[ 　]+/); //引数一覧を取得(半角スペースまたは全角スペースで引数を区切る)
     const commandName = args.shift().toLowerCase(); //コマンド名を取得
 
     if (!client.commands.has(commandName)) { //指定されたコマンド名が存在しなかった時の処理
