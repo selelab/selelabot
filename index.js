@@ -53,7 +53,7 @@ client.on('message', message => {
 });
 
 /* サーバに誰かが新規参加した時の動作 */
-client.on('guildMemberAdd', async (member) => {
+client.on('guildMemberAdd', (member) => {
     auto_role_adder.execute(client, member, member.guild.id); //役職自動付与プロトコル
 });
 
