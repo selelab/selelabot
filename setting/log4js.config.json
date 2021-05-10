@@ -1,12 +1,16 @@
 {
     "appenders": {
-        "out":{
-            "type": "console"
+        "out": {
+            "type": "stdout"
+        },
+        "app": {
+            "type": "file",
+            "filename": "selelabot.log"
         }
     },
     "categories": {
         "default": {
-            "appenders": ["out"],
+            "appenders": ["out", "app"],
             "level": "debug"
         }
     }
