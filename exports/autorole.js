@@ -1,21 +1,25 @@
 const Discord = require('discord.js');
+const log4js = require('log4js');
+
+log4js.configure('./setting/log4js.config.json'); //log4jsの設定の読み込み
+const logger = log4js.getLogger();
 const server_setting = require('../setting/selelab.json'); //各サーバ固有の設定の読み込み
 
 const sleep = async (seconds) => new Promise((resolve, reject) => { setTimeout(() => { resolve(); }, seconds * 1000); });
 
 module.exports = {
     async execute(client, member, guild_id) {
-        console.log(`[guildMemberAdd] ${member.displayName}さんがサーバ"${member.guild.name}"に参加しました`);
-        console.log(`[guildMemberAdd] 役職自動付与プロトコル_開始：${member.guild.name}`);
+        logger.info(`[guildMemberAdd] ${member.displayName}さんがサーバ"${member.guild.name}"に参加しました`);
+        logger.info(`[guildMemberAdd] 役職自動付与プロトコル_開始：${member.guild.name}`);
 
         if (member.user.bot) {
-            return console.error("[guildMemberAdd] 当該ユーザはbotです");
+            return logger.error("[guildMemberAdd] 当該ユーザはbotです");
         }
 
         /* チャンネル名の完全一致で特定のチャンネルを指定し、そこで役職付与プロトコルを開始 */
         const welcomeChannel = client.guilds.cache.get(guild_id).channels.cache.find(channel => channel.name === server_setting.CHANNEL.WELCOME);
         if (!welcomeChannel) {
-            return console.error("[guildMemberAdd] 該当するチャンネルが見つかりませんでした");
+            return logger.error("[guildMemberAdd] 該当するチャンネルが見つかりませんでした");
         }
 
         /* メンションを飛ばす */
@@ -49,7 +53,7 @@ module.exports = {
         welcomeChannel.awaitMessages(msgFilter, { max: 1, time: 5 * 60 * 1000 })
         // Promiseを解決すると、収集できたメッセージのCollectionを得られる
             .then(collected => {
-                console.log('[guildMemberAdd] 送信された番号: ' + collected.first().content); //collected.first()で取得できたメッセージを取得してログに出す
+                logger.info('[guildMemberAdd] 送信された番号: ' + collected.first().content); //collected.first()で取得できたメッセージを取得してログに出す
                 try {
                     const grade_number = Number(collected.first().content);
                     const grade_name = server_setting.ROLE.find(data => data.NUM === grade_number);
@@ -64,14 +68,14 @@ module.exports = {
                     }
                     infoChannel.send(`${member}さん、上智エレラボへようこそ！あなたを${grade_role}として登録しました。`);
 
-                    console.log("[guildMemberAdd] 役職自動付与プロトコル：終了");
+                    logger.info("[guildMemberAdd] 役職自動付与プロトコル：終了");
                 } catch (e) {
-                    console.log(e);
+                    logger.info(e);
                     welcomeChannel.send("処理中にエラーが発生しました");
                 }
             })
             .catch(collected => {
-                if (!collected.size) return console.log('メッセージが送信されませんでした(タイムアウト)');
+                if (!collected.size) return logger.info('メッセージが送信されませんでした(タイムアウト)');
                 welcomeChannel.send("5分以内に操作を確認できなかったため、役職自動付与プロトコルを自動終了します");
                 //何も収集できなかった場合を弾く(collected.sizeは取得できた個数、つまりこれは0のときを弾く)
             });        

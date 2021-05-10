@@ -1,4 +1,8 @@
 const Discord = require('discord.js');
+const log4js = require('log4js');
+
+log4js.configure('./setting/log4js.config.json'); //log4jsの設定の読み込み
+const logger = log4js.getLogger();
 const sleep = async (seconds) => new Promise((resolve, reject) => { setTimeout(() => { resolve(); }, seconds * 1000); }); /* 一定時間だけ非同期で処理を待つ(単位：秒) */
 
 module.exports = {
@@ -41,11 +45,11 @@ module.exports = {
             }
             
             const poll = await message.channel.send("投票が開始されました！", poll_embed); //投票開始
-            console.log(`[!poll] ${message.author.username}が投票"${title}"を開始しました`);
+            logger.info(`[!poll] ${message.author.username}が投票"${title}"を開始しました`);
             emojis.slice(0, choices.length).forEach(emoji => poll.react(emoji)); //リアクション付与
             
             if (time == 0) {
-                return console.log(`[!poll] 投票"${title}"は無期限のため、処理を終了します`);
+                return logger.info(`[!poll] 投票"${title}"は無期限のため、処理を終了します`);
             } else {
                 await sleep(time * 60); //指定された時間待つ（期間無制限ならここで早期return）
             }
@@ -56,10 +60,10 @@ module.exports = {
                 .setFooter("この投票は締め切られました。")
                 .setTimestamp();
             poll_finished.edit("", poll_embed); //メッセージを編集して集計結果をDiscord上に反映
-            console.log(`[!poll] ${message.author.username}が開始した投票"${title}"が終了しました`);
+            logger.info(`[!poll] ${message.author.username}が開始した投票"${title}"が終了しました`);
 
         } catch (e) {
-            console.log('[poll] ' + e);
+            logger.error('[poll] ' + e);
             message.channel.send('処理中にエラーが発生しました');
         }
     },

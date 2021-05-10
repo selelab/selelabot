@@ -1,4 +1,8 @@
 const fs = require('fs');
+const log4js = require('log4js');
+
+log4js.configure('./setting/log4js.config.json'); //log4jsの設定の読み込み
+const logger = log4js.getLogger();
 const { prefix } = JSON.parse(fs.readFileSync('./setting/env.json'));
 
 module.exports = {
@@ -22,7 +26,7 @@ module.exports = {
                     message.reply('I\'ve sent you a DM with all my commands!');
                 })
                 .catch(error => {
-                    console.error(`Could not send help DM to ${message.author.tag}.\n`, error);
+                    logger.error(`Could not send help DM to ${message.author.tag}.\n`, error);
                     message.reply('it seems like I can\'t DM you! Do you have DMs disabled?');
                 });
         }
