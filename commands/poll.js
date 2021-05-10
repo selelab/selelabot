@@ -41,19 +41,22 @@ module.exports = {
             }
             
             const poll = await message.channel.send("投票が開始されました！", poll_embed); //投票開始
+            console.log(`[!poll] ${message.author.username}が投票"${title}"を開始しました`);
             emojis.slice(0, choices.length).forEach(emoji => poll.react(emoji)); //リアクション付与
+            
             if (time == 0) {
-                return;
+                return console.log(`[!poll] 投票"${title}"は無期限のため、処理を終了します`);
             } else {
                 await sleep(time * 60); //指定された時間待つ（期間無制限ならここで早期return）
             }
 
-            const poll_finished = await message.channel.messages.fetch(poll.id); //投票終了
-            const poll_results = emojis.slice(0, choices.length).map(emoji => `${emoji}${poll_finished.reactions.cache.get(emoji).count - 1}票`); //投票結果の集計
+            const poll_finished = await message.channel.messages.fetch(poll.id, true, true); //投票終了
+            const poll_results = emojis.slice(0, choices.length).map(emoji => `${emoji} ${poll_finished.reactions.cache.get(emoji).count - 1}票`); //投票結果の集計
             poll_embed.addField(":fire:投票結果:fire:", poll_results.join('\n')) //埋め込みメッセージに集計結果を書き込み
                 .setFooter("この投票は締め切られました。")
                 .setTimestamp();
             poll_finished.edit("", poll_embed); //メッセージを編集して集計結果をDiscord上に反映
+            console.log(`[!poll] ${message.author.username}が開始した投票"${title}"が終了しました`);
 
         } catch (e) {
             console.log('[poll] ' + e);

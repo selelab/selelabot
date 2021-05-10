@@ -10,7 +10,8 @@ const auto_role_adder = require('./exports/autorole.js'); //役職自動付与�
 const client = new Discord.Client({ //Discordクライアントの作成
     ws: {
         intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MEMBERS', 'GUILD_PRESENCES'] //Gateway Intentの有効化・指定
-    }
+    },
+    partials: ['MESSAGE', 'REACTION', 'CHANNEL'], //Partialの設定
 });
 
 /* 一定時間だけ非同期で処理を待つ(単位：秒) */
