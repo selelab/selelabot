@@ -5,7 +5,8 @@
         },
         "app": {
             "type": "file",
-            "filename": "selelabot.log"
+            "filename": "./logs/selelabot.log",
+            "pattern": ".yyyyMMdd-hhmmss"
         }
     },
     "categories": {
