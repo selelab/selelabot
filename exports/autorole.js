@@ -55,9 +55,9 @@ module.exports = {
             .then(collected => {
                 logger.info('[guildMemberAdd] 送信された番号: ' + collected.first().content); //collected.first()で取得できたメッセージを取得してログに出す
                 try {
-                    const grade_number = Number(collected.first().content);
-                    const grade_name = server_setting.ROLE.find(data => data.NUM === grade_number);
-                    const grade_role = member.guild.roles.cache.find(role => role.name === grade_name.GRADE);
+                    const grade_number = Number(collected.first().content); //入力番号取得
+                    const grade_name = server_setting.ROLE.find(data => data.NUM === grade_number); //学年取得
+                    const grade_role = member.guild.roles.cache.find(role => role.name === grade_name.GRADE); //役職名取得
 
                     member.roles.add(grade_role); //対応する学年役職を参加メンバーに追加
 
@@ -75,7 +75,7 @@ module.exports = {
                 }
             })
             .catch(collected => {
-                if (!collected.size) return logger.info('メッセージが送信されませんでした(タイムアウト)');
+                if (!collected.size) return logger.info('[autorole] メッセージが送信されませんでした(タイムアウト)');
                 welcomeChannel.send("5分以内に操作を確認できなかったため、役職自動付与プロトコルを自動終了します");
                 //何も収集できなかった場合を弾く(collected.sizeは取得できた個数、つまりこれは0のときを弾く)
             });        
