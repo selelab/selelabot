@@ -7,7 +7,10 @@ const sleep = async (seconds) => new Promise((resolve, reject) => { setTimeout((
 
 module.exports = {
     name: 'poll',
-    description: '投票を作成するよ',
+    description: `リアクションによる投票を作成するよ！指定した制限時間が過ぎると投票数を自動で集計してくれるよ！投票の選択肢は2個以上10個以下に対応しているよ！
+    入力方法は「!poll 投票の制限時間（単位：分） 質問文 選択肢1 選択肢2」
+    時間無制限なら制限時間に「0」と入力してね！（ただし集計は無効になる）
+    入力例：!poll 30 きのこの山とたけのこの里だったらどっちが好き？ きのこ たけのこ ポッキー`,
     async execute(message, args) {
         try {
             const emojis = ['🇦', '🇧', '🇨', '🇩', '🇪', '🇫', '🇬', '🇭', '🇮', '🇯'];
