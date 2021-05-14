@@ -32,7 +32,39 @@ module.exports = {
         /* 役職付与プロトコル開始 */
 
         /* Q1. 開始 */
-        welcomeChannel.send(`Q1. ${member}さん、あなたは何年生ですか？
+        welcomeChannel.send(`Q1. ${member}さん、あなたは本サークルへの入会願を既に提出していますか？
+        提出しているなら「はい」、提出していないなら「いいえ」と、ここに投稿して下さい！`);
+
+        // ユーザーの入力を受け取り、処理する
+        const msgFilter_Q1 = msg => {
+            return (msg.author.id === member.id && msg.content.match(/^(はい|いいえ)$/g)) ? true : false;
+            //「新しく参加したメンバーの投稿である」かつ「"はい"または"いいえ"のみの投稿である」 => 条件に合致
+        };
+        welcomeChannel.awaitMessages(msgFilter_Q1, { max: 1, time: 5 * 60 * 1000 })
+            .then(collected => {
+                const answer = collected.first().content;
+                logger.info('[guildMemberAdd] 送信された回答: ' + answer); //collected.first()で取得できたメッセージを取得してログに出す
+                try {
+                    if (answer == 'はい') {
+                        const temp_role = member.guild.roles.cache.find(role => role.name === '臨時会員');
+                        member.roles.add(temp_role); //臨時会員ならば参加メンバーに追加
+                    }
+                } catch (e) {
+                    logger.info(e);
+                    welcomeChannel.send("処理中にエラーが発生しました");
+                }
+            })
+            .catch(collected => {
+                if (!collected.size) return logger.info('[autorole] メッセージが送信されませんでした(タイムアウト)');
+                welcomeChannel.send("5分以内にQ1.の回答を確認できなかったため、役職自動付与プロトコルを自動終了します");
+                //何も収集できなかった場合を弾く(collected.sizeは取得できた個数、つまりこれは0のときを弾く)
+            });
+        /* Q1. 終了 */
+
+        await sleep(3); //3秒待つ
+
+        /* Q2. 開始 */
+        welcomeChannel.send(`Q2. ${member}さん、あなたは何年生ですか？
         次の選択肢の中からあなたの現在の学年に対応する番号を選び、その番号を__**半角数字1個だけで**__ここに投稿して下さい！`);
         const gradeEmbed = new Discord.MessageEmbed()
             .setColor('#0099ff')
@@ -48,11 +80,11 @@ module.exports = {
         welcomeChannel.send(gradeEmbed);
 
         // ユーザーの入力を受け取り、処理する
-        const msgFilter_Q1 = msg => {
+        const msgFilter_Q2 = msg => {
             return (msg.author.id === member.id && msg.content.match(/^[12345]$/)) ? true : false;
             //「新しく参加したメンバーの投稿である」かつ「1から5までの半角数字のどれか一つだけを含む」 => 条件に合致
         };
-        welcomeChannel.awaitMessages(msgFilter_Q1, { max: 1, time: 5 * 60 * 1000 })
+        welcomeChannel.awaitMessages(msgFilter_Q2, { max: 1, time: 5 * 60 * 1000 })
         // Promiseを解決すると、収集できたメッセージのCollectionを得られる
             .then(collected => {
                 const answer = collected.first().content;
@@ -71,36 +103,6 @@ module.exports = {
                         throw Error("[guildMemberAdd] 該当するチャンネルが見つかりませんでした");
                     }
                     infoChannel.send(`${member}さん、上智エレラボへようこそ！あなたを${grade_role}として登録しました。`);
-                } catch (e) {
-                    logger.info(e);
-                    welcomeChannel.send("処理中にエラーが発生しました");
-                }
-            })
-            .catch(collected => {
-                if (!collected.size) return logger.info('[autorole] メッセージが送信されませんでした(タイムアウト)');
-                welcomeChannel.send("5分以内にQ1.の回答を確認できなかったため、役職自動付与プロトコルを自動終了します");
-                //何も収集できなかった場合を弾く(collected.sizeは取得できた個数、つまりこれは0のときを弾く)
-            });
-        /* Q1. 終了 */
-        
-        /* Q2. 開始 */
-        welcomeChannel.send(`Q2. ${member}さん、あなたは本サークルへの入会願を既に提出していますか？
-        提出しているなら「はい」、提出していないなら「いいえ」と、ここに投稿して下さい！`);
-
-        // ユーザーの入力を受け取り、処理する
-        const msgFilter_Q2 = msg => {
-            return (msg.author.id === member.id && msg.content.match(/^(はい|いいえ)$/g)) ? true : false;
-            //「新しく参加したメンバーの投稿である」かつ「"はい"または"いいえ"のみの投稿である」 => 条件に合致
-        };
-        welcomeChannel.awaitMessages(msgFilter_Q2, { max: 1, time: 5 * 60 * 1000 })
-            .then(collected => {
-                const answer = collected.first().content;
-                logger.info('[guildMemberAdd] 送信された回答: ' + answer); //collected.first()で取得できたメッセージを取得してログに出す
-                try {
-                    if (answer == 'はい') {
-                        const temp_role = member.guild.roles.cache.find(role => role.name === '臨時会員');
-                        member.roles.add(temp_role); //臨時会員ならば参加メンバーに追加
-                    }
                 } catch (e) {
                     logger.info(e);
                     welcomeChannel.send("処理中にエラーが発生しました");
