@@ -102,7 +102,8 @@ module.exports = {
                     if (!infoChannel) {
                         throw Error("[guildMemberAdd] 該当するチャンネルが見つかりませんでした");
                     }
-                    infoChannel.send(`${member}さん、上智エレラボへようこそ！あなたを${grade_role}として登録しました。`);
+                    infoChannel.send(`${member}さん、上智エレラボへようこそ！あなたを${grade_role}として登録しました。
+                    #自己紹介 チャンネルで自己紹介の書き込みをしてくださいね`);
                 } catch (e) {
                     logger.info(e);
                     welcomeChannel.send("処理中にエラーが発生しました");
