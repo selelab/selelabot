@@ -38,16 +38,23 @@ const auto_role_adder = require('./exports/autorole.js'); //役職自動付与�
         if (message.author.bot) return; //「botによる投稿である」 => 無視
 
         if (message.content.startsWith(`https://discord.com/channels/${message.guild.id}/`)) {
-            const discord_link = message.content;
-            const discord_link_regex = /([0-9]+)\/([0-9]+)$/;
-            const [, target_channel_id, target_message_id] = discord_link.match(discord_link_regex); //貼られたDiscordサーバ内のリンクから、チャンネルidとメッセージidを取り出す
+            try {
+                const discord_link = message.content;
+                const discord_link_regex = /([0-9]+)\/([0-9]+)$/;
+                const [, target_channel_id, target_message_id] = discord_link.match(discord_link_regex); //貼られたDiscordサーバ内のリンクから、チャンネルidとメッセージidを取り出す
             
-            const linked_message = await message.guild.channels.cache.get(target_channel_id).messages.fetch(target_message_id, true, true); //指定された
-            const linked_message_embed = new Discord.MessageEmbed()
-                .setAuthor(message.author.username, message.author.displayAvatarURL()) //投票作成者のアイコンと名前
-                .setDescription(linked_message.content) //メッセージの内容
-                .setTimestamp(linked_message.createdAt); //リンクされたメッセージの投稿日時
-            message.channel.send(linked_message_embed); //送信
+                const linked_channel = await message.guild.channels.cache.get(target_channel_id); //チャンネル情報取得
+                const linked_message = await linked_channel.messages.fetch(target_message_id, true, true); //メッセージ情報取得
+                const linked_message_embed = new Discord.MessageEmbed()
+                    .setAuthor(message.author.username, message.author.displayAvatarURL()) //投票作成者のアイコンと名前
+                    .setDescription(linked_message.content) //メッセージの内容
+                    .setFooter(await linked_channel.name, message.guild.iconURL()) //サーバアイコンとリンク先のチャンネル名
+                    .setTimestamp(linked_message.createdAt); //リンクされたメッセージの投稿日時
+                message.channel.send(linked_message_embed); //送信
+            } catch (e) {
+                logger.error(e);
+                message.channel.send(`リンク参照処理時にエラーが発生しました`);
+            }
         }
 
         if (message.content.startsWith(prefix)) { //「投稿にコマンドのprefixがついていない」 => コマンド処理開始
@@ -62,6 +69,7 @@ const auto_role_adder = require('./exports/autorole.js'); //役職自動付与�
 
             try {
                 command.execute(message, args); //コマンドを実行
+                logger.info(`[message] コマンド "${commandName}" が実行されました`);
             } catch (e) { //エラーハンドリング
                 logger.error(e);
                 message.reply(`コマンド "${commandName}" 実行時にエラーが発生しました`);
