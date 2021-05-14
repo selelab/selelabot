@@ -32,25 +32,40 @@ const auto_role_adder = require('./exports/autorole.js'); //役職自動付与�
     });
 
     /* サーバに新規書き込みがあった際の動作 */
-    client.on('message', message => {
+    client.on('message', async (message) => {
         /* サーバへの新規書き込みを取得し、それがbotへのコマンド命令であったならば、指定されたコマンドを実行する */
 
-        if (!message.content.startsWith(prefix) || message.author.bot) return; //「投稿にコマンドのprefixがついていない」または「botによる投稿である」 => 無視
+        if (message.author.bot) return; //「botによる投稿である」 => 無視
 
-        const args = message.content.slice(prefix.length).split(/[ 　]+/); //引数一覧を取得(半角スペースまたは全角スペースで引数を区切る)
-        const commandName = args.shift().toLowerCase(); //コマンド名を取得
-
-        if (!client.commands.has(commandName)) { //指定されたコマンド名が存在しなかった時の処理
-            return message.reply(`コマンド "${commandName}" は存在しません`);
+        if (message.content.startsWith(`https://discord.com/channels/${message.guild.id}/`)) {
+            const discord_link = message.content;
+            const discord_link_regex = /([0-9]+)\/([0-9]+)$/;
+            const [, target_channel_id, target_message_id] = discord_link.match(discord_link_regex); //貼られたDiscordサーバ内のリンクから、チャンネルidとメッセージidを取り出す
+            
+            const linked_message = await message.guild.channels.cache.get(target_channel_id).messages.fetch(target_message_id, true, true); //指定された
+            const linked_message_embed = new Discord.MessageEmbed()
+                .setAuthor(message.author.username, message.author.displayAvatarURL()) //投票作成者のアイコンと名前
+                .setDescription(linked_message.content) //メッセージの内容
+                .setTimestamp(linked_message.createdAt); //リンクされたメッセージの投稿日時
+            message.channel.send(linked_message_embed); //送信
         }
 
-        const command = client.commands.get(commandName); //コマンドオブジェクトを代入
+        if (message.content.startsWith(prefix)) { //「投稿にコマンドのprefixがついていない」 => コマンド処理開始
+            const args = message.content.slice(prefix.length).split(/[ 　]+/); //引数一覧を取得(半角スペースまたは全角スペースで引数を区切る)
+            const commandName = args.shift().toLowerCase(); //コマンド名を取得
 
-        try {
-            command.execute(message, args); //コマンドを実行
-        } catch (e) { //エラーハンドリング
-            logger.error(e);
-            message.reply(`コマンド "${commandName}" 実行時にエラーが発生しました`);
+            if (!client.commands.has(commandName)) { //指定されたコマンド名が存在しなかった時の処理
+                return message.reply(`コマンド "${commandName}" は存在しません`);
+            }
+
+            const command = client.commands.get(commandName); //コマンドオブジェクトを代入
+
+            try {
+                command.execute(message, args); //コマンドを実行
+            } catch (e) { //エラーハンドリング
+                logger.error(e);
+                message.reply(`コマンド "${commandName}" 実行時にエラーが発生しました`);
+            }
         }
     });
 
