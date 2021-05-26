@@ -13,19 +13,17 @@ module.exports = {
         logger.info(`[guildMemberAdd] 役職自動付与プロトコル_開始：${member.guild.name}`);
 
         if (member.user.bot) {
-            return logger.error("[guildMemberAdd] 当該ユーザはbotです");
+            return logger.fatal("[guildMemberAdd] 当該ユーザはbotです");
         }
 
         /* チャンネル名の完全一致で特定のチャンネルを指定し、そこで役職付与プロトコルを開始 */
         const welcomeChannel = client.guilds.cache.get(guild_id).channels.cache.find(channel => channel.name === server_setting.CHANNEL.WELCOME);
         if (!welcomeChannel) {
-            return logger.error("[guildMemberAdd] 該当するチャンネルが見つかりませんでした");
+            return logger.fatal("[guildMemberAdd] 該当するチャンネルが見つかりませんでした");
         }
 
         /* メンションを飛ばす */
-        welcomeChannel.send(`${member}さん、${member.guild.name}へようこそ！
-        チャット上であなたが誰なのか識別できるようにするため、最初にあなたの学年を登録する必要があります。
-        必ず以下の質問に答えて下さい！`);
+        welcomeChannel.send(`${member}さん、${member.guild.name}へようこそ！\nチャット上であなたが誰なのか識別できるようにするため、最初にあなたの学年を登録する必要があります。\n必ず以下の質問に答えて下さい！`);
 
         await sleep(2); //2秒待つ
 
@@ -40,28 +38,26 @@ module.exports = {
             return (msg.author.id === member.id && msg.content.match(/^(はい|いいえ)$/g)) ? true : false;
             //「新しく参加したメンバーの投稿である」かつ「"はい"または"いいえ"のみの投稿である」 => 条件に合致
         };
-        welcomeChannel.awaitMessages(msgFilter_Q1, { max: 1, time: 5 * 60 * 1000 })
-            .then(collected => {
-                const answer = collected.first().content;
-                logger.info('[guildMemberAdd] 送信された回答: ' + answer); //collected.first()で取得できたメッセージを取得してログに出す
-                try {
-                    if (answer == 'はい') {
-                        const temp_role = member.guild.roles.cache.find(role => role.name === '臨時会員');
-                        member.roles.add(temp_role); //臨時会員ならば参加メンバーに追加
-                    }
-                } catch (e) {
-                    logger.info(e);
-                    welcomeChannel.send("処理中にエラーが発生しました");
-                }
-            })
-            .catch(collected => {
-                if (!collected.size) return logger.info('[autorole] メッセージが送信されませんでした(タイムアウト)');
-                welcomeChannel.send("5分以内にQ1.の回答を確認できなかったため、役職自動付与プロトコルを自動終了します");
-                //何も収集できなかった場合を弾く(collected.sizeは取得できた個数、つまりこれは0のときを弾く)
-            });
+        const collected_message_Q1 = await welcomeChannel.awaitMessages(msgFilter_Q1, { max: 1, time: 5 * 60 * 1000 });
+        // Promiseを解決すると、収集できたメッセージのCollectionを得られる
+        try {
+            if (!collected_message_Q1.size) {//何も収集できなかった場合を弾く(sizeは取得できた個数、つまりこれは0のときを弾く)
+                throw new Error('[autorole] Q1の回答が送信されませんでした(タイムアウト)');
+            }
+
+            const answer_Q1 = collected_message_Q1.first().content;
+            logger.info('[guildMemberAdd] 送信された回答: ' + answer_Q1); //first()で取得できたメッセージを取得してログに出す
+            if (answer_Q1 == 'はい') {
+                const temp_role = member.guild.roles.cache.find(role => role.name === '臨時会員');
+                member.roles.add(temp_role); //臨時会員ならば参加メンバーに追加
+            }
+        } catch (e) {
+            logger.fatal(e);
+            welcomeChannel.send("Q1の処理中にエラーが発生しました");
+        }
         /* Q1. 終了 */
 
-        await sleep(3); //3秒待つ
+        await sleep(2);
 
         /* Q2. 開始 */
         welcomeChannel.send(`Q2. ${member}さん、あなたは何年生ですか？
@@ -69,7 +65,7 @@ module.exports = {
         const gradeEmbed = new Discord.MessageEmbed()
             .setColor('#0099ff')
             .setTitle('あなたの現在の学年に対応する番号を投稿して下さい')
-            .setDescription('入力するのは半角数字一個だけです。日本語とか記号とかは入力しないで下さい')
+            .setDescription('入力するのは半角数字一個だけです。日本語や記号などは入力しないで下さい')
             .addFields(
                 { name: `${server_setting.GRADE.FIRST}なら`, value: '1 と入力'},
                 { name: `${server_setting.GRADE.SECOND}なら`, value: '2 と入力' },
@@ -84,36 +80,31 @@ module.exports = {
             return (msg.author.id === member.id && msg.content.match(/^[12345]$/)) ? true : false;
             //「新しく参加したメンバーの投稿である」かつ「1から5までの半角数字のどれか一つだけを含む」 => 条件に合致
         };
-        welcomeChannel.awaitMessages(msgFilter_Q2, { max: 1, time: 5 * 60 * 1000 })
-        // Promiseを解決すると、収集できたメッセージのCollectionを得られる
-            .then(collected => {
-                const answer = collected.first().content;
-                logger.info('[guildMemberAdd] 送信された番号: ' + answer); //collected.first()で取得できたメッセージを取得してログに出す
-                
-                try {
-                    const grade_number = Number(answer); //入力番号取得
-                    const grade_name = server_setting.ROLE.find(data => data.NUM == grade_number); //学年取得
-                    const grade_role = member.guild.roles.cache.find(role => role.name == grade_name.GRADE); //役職名取得
+        const collected_message_Q2 = await welcomeChannel.awaitMessages(msgFilter_Q2, { max: 1, time: 5 * 60 * 1000 });
+        try {
+            if (!collected_message_Q2.size) {
+                throw new Error('[autorole] メッセージが送信されませんでした(タイムアウト)');
+            }
 
-                    member.roles.add(grade_role); //対応する学年役職を参加メンバーに追加
+            const answer_Q2 = collected_message_Q2.first().content;
+            logger.info('[guildMemberAdd] 送信された番号: ' + answer_Q2);
 
-                    /* 別のチャンネルで新規参加者のことをお知らせする */
-                    const infoChannel = client.guilds.cache.get(guild_id).channels.cache.find(channel => channel.name === server_setting.CHANNEL.INFO);
-                    if (!infoChannel) {
-                        throw Error("[guildMemberAdd] 該当するチャンネルが見つかりませんでした");
-                    }
-                    infoChannel.send(`${member}さん、上智エレラボへようこそ！あなたを${grade_role}として登録しました。
-                    #自己紹介 チャンネルで自己紹介の書き込みをしてくださいね`);
-                } catch (e) {
-                    logger.info(e);
-                    welcomeChannel.send("処理中にエラーが発生しました");
-                }
-            })
-            .catch(collected => {
-                if (!collected.size) return logger.info('[autorole] メッセージが送信されませんでした(タイムアウト)');
-                welcomeChannel.send("5分以内にQ2.の回答を確認できなかったため、役職自動付与プロトコルを自動終了します");
-                //何も収集できなかった場合を弾く(collected.sizeは取得できた個数、つまりこれは0のときを弾く)
-            });
+            const grade_number = Number(answer_Q2); //入力番号取得
+            const grade_name = server_setting.ROLE.find(data => data.NUM == grade_number); //学年取得
+            const grade_role = member.guild.roles.cache.find(role => role.name == grade_name.GRADE); //役職名取得
+
+            member.roles.add(grade_role); //対応する学年役職を参加メンバーに追加
+
+            /* 別のチャンネルで新規参加者のことをお知らせする */
+            const infoChannel = client.guilds.cache.get(guild_id).channels.cache.find(channel => channel.name === server_setting.CHANNEL.INFO);
+            if (!infoChannel) {
+                throw Error("[guildMemberAdd] 新規参加者をお知らせするチャンネルが見つかりませんでした");
+            }
+            infoChannel.send(`${member}さん、上智エレラボへようこそ！あなたを${grade_name}として登録しました。\n#自己紹介 チャンネルで自己紹介の書き込みをしてくださいね`);
+        } catch (e) {
+            logger.fatal(e);
+            welcomeChannel.send("Q2の処理中にエラーが発生しました");
+        }
         /* Q2. 終了 */
         
         logger.info("[guildMemberAdd] 役職自動付与プロトコル：終了");
