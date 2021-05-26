@@ -37,7 +37,7 @@ const auto_role_adder = require('./exports/autorole.js'); //役職自動付与�
 
         if (message.author.bot) return; //「botによる投稿である」 => 無視
 
-        if (message.content.startsWith(`https://discord.com/channels/${message.guild.id}/`)) {
+        if (message.content.includes(`https://discord.com/channels/${message.guild.id}/`) || message.content.includes(`https://discordapp.com/channels/${message.guild.id}/`)) {
             try {
                 const discord_link = message.content;
                 const discord_link_regex = /([0-9]+)\/([0-9]+)$/;
@@ -52,8 +52,9 @@ const auto_role_adder = require('./exports/autorole.js'); //役職自動付与�
                     .setTimestamp(linked_message.createdAt); //リンクされたメッセージの投稿日時
                 message.channel.send(linked_message_embed); //送信
             } catch (e) {
-                logger.error(e);
-                message.channel.send(`リンク参照処理時にエラーが発生しました`);
+                const e_msg = `リンク参照処理時にエラーが発生しました`;
+                logger.error(e_msg + e);
+                message.channel.send(e_msg);
             }
         }
 
@@ -71,8 +72,9 @@ const auto_role_adder = require('./exports/autorole.js'); //役職自動付与�
                 command.execute(message, args); //コマンドを実行
                 logger.info(`[message] コマンド "${commandName}" が実行されました`);
             } catch (e) { //エラーハンドリング
-                logger.error(e);
-                message.reply(`コマンド "${commandName}" 実行時にエラーが発生しました`);
+                const e_msg = `コマンド "${commandName}" 実行時にエラーが発生しました`;
+                logger.error(e_msg + e);
+                message.reply(e_msg);
             }
         }
     });
@@ -89,7 +91,7 @@ const auto_role_adder = require('./exports/autorole.js'); //役職自動付与�
         if (!infoChannel) {
             return logger.error("[guildMemberRemove] 該当するチャンネルが見つかりませんでした");
         }
-        infoChannel.send(`${member.user.username}さんがサーバから脱退しました`);
+        infoChannel.send(`${member.user.username}さんがこのサーバから脱退しました`);
         logger.info(`[guildMemberRemove] ${member.user.username}さんがサーバ"${member.guild.name}"から脱退しました`);
     });
 
