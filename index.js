@@ -44,9 +44,9 @@ const auto_role_adder = require('./exports/autorole.js'); //役職自動付与�
                 const [, target_channel_id, target_message_id] = discord_link.match(discord_link_regex); //貼られたDiscordサーバ内のリンクから、チャンネルidとメッセージidを取り出す
             
                 const linked_channel = await message.guild.channels.cache.get(target_channel_id); //チャンネル情報取得
-                const linked_message = await linked_channel.messages.fetch(target_message_id, true, true); //メッセージ情報取得
+                const linked_message = await linked_channel.messages.fetch(target_message_id, true, true); //被参照メッセージ情報取得
                 const linked_message_embed = new Discord.MessageEmbed()
-                    .setAuthor(message.author.username, message.author.displayAvatarURL()) //投票作成者のアイコンと名前
+                    .setAuthor(linked_message.author.username, linked_message.author.displayAvatarURL()) //参照先メッセージ投稿者のアイコンと名前
                     .setDescription(linked_message.content) //メッセージの内容
                     .setFooter(await linked_channel.name, message.guild.iconURL()) //サーバアイコンとリンク先のチャンネル名
                     .setTimestamp(linked_message.createdAt); //リンクされたメッセージの投稿日時
