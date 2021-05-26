@@ -16,23 +16,32 @@
 - 新規作成されたテキストチャンネルの「チャンネルの管理」権限を自動で設定し、削除プロテクトを掛ける
 - 新年度移行時の学年役職自動更新
 
-その他、需要と要望に応じて新機能を随時追加予定
+その他、需要と要望に応じて新機能を随時追加予定（Issueも参照）
 
 ## 必要なもの
 
 - Node.js (v14推奨)
 - yarn (v1.22.10以上)
+- ご家庭にあるNode.js対応の適当なプロセスマネージャ（エレラボサーバではpm2を採用）
 
 ## 環境構築
+
+pm2の場合：
 
 ```
 $ git clone https://github.com/selelab/selelabot
 $ cd selelabot
 $ yarn
+$ npm install pm2 -g
 ```
+
+※最後の行はpm2がグローバルで入りさえすりゃいいのでyarnでも良い
 
 ## 実行方法
 
+カレントディレクトリが``selelabot``の時：
+
 ```
-$ node index.js
+$ pm2 start index.js --name selelabot-discord
 ```
+※アプリケーションの名前は何でもいい
