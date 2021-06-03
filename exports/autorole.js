@@ -90,17 +90,17 @@ module.exports = {
             logger.info('[guildMemberAdd] 送信された番号: ' + answer_Q2);
 
             const grade_number = Number(answer_Q2); //入力番号取得
-            const grade_name = server_setting.ROLE.find(data => data.NUM == grade_number); //学年取得
-            const grade_role = member.guild.roles.cache.find(role => role.name == grade_name.GRADE); //役職名取得
+            const grade_info = server_setting.ROLE.find(data => data.NUM == grade_number); //学年取得
+            const grade_role_name = member.guild.roles.cache.find(role => role.name == grade_info.GRADE); //役職名取得
 
-            member.roles.add(grade_role); //対応する学年役職を参加メンバーに追加
+            member.roles.add(grade_role_name); //対応する学年役職を参加メンバーに追加
 
             /* 別のチャンネルで新規参加者のことをお知らせする */
             const infoChannel = client.guilds.cache.get(guild_id).channels.cache.find(channel => channel.name === server_setting.CHANNEL.INFO);
             if (!infoChannel) {
                 throw Error("[guildMemberAdd] 新規参加者をお知らせするチャンネルが見つかりませんでした");
             }
-            infoChannel.send(`${member}さん、上智エレラボへようこそ！あなたを${grade_name}として登録しました。\n#自己紹介 チャンネルで自己紹介の書き込みをしてくださいね`);
+            infoChannel.send(`${member}さん、上智エレラボへようこそ！あなたを${grade_info.GRADE}として登録しました。\n #自己紹介 チャンネルで自己紹介の書き込みをしてくださいね`);
         } catch (e) {
             logger.fatal(e);
             welcomeChannel.send("Q2の処理中にエラーが発生しました");
