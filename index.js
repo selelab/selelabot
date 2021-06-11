@@ -1,12 +1,13 @@
 const Discord = require('discord.js');
 const fs = require('fs');
 const log4js = require('log4js');
+const fetch = require('node-fetch');
 
 log4js.configure('./setting/log4js.config.json'); //log4jsの設定の読み込み
 const logger = log4js.getLogger();
 const config = require('./setting/env.json'); //ログイン情報類の読み込み
 const server_setting = require('./setting/selelab.json'); //各サーバ固有の設定の読み込み
-const { token, prefix } = config;
+const { discord_token, command_prefix, accounting_system_token } = config;
 
 const auto_role_adder = require('./exports/autorole.js'); //役職自動付与プロトコル用のコード
 
@@ -33,10 +34,11 @@ const auto_role_adder = require('./exports/autorole.js'); //役職自動付与�
 
     /* サーバに新規書き込みがあった際の動作 */
     client.on('message', async (message) => {
-        /* サーバへの新規書き込みを取得し、それがbotへのコマンド命令であったならば、指定されたコマンドを実行する */
+        /* サーバへの新規書き込みを取得し、それがbotへの命令であったならば、指定された処理を実行する */
 
         if (message.author.bot) return; //「botによる投稿である」 => 無視
 
+        // サーバ内部リンク参照処理
         if (message.content.includes(`https://discord.com/channels/${message.guild.id}/`) || message.content.includes(`https://discordapp.com/channels/${message.guild.id}/`)) {
             try {
                 const discord_link = message.content;
@@ -50,7 +52,9 @@ const auto_role_adder = require('./exports/autorole.js'); //役職自動付与�
                     .setDescription(linked_message.content) //メッセージの内容
                     .setFooter(await linked_channel.name, message.guild.iconURL()) //サーバアイコンとリンク先のチャンネル名
                     .setTimestamp(linked_message.createdAt); //リンクされたメッセージの投稿日時
+
                 message.channel.send(linked_message_embed); //送信
+
             } catch (e) {
                 const e_msg = `リンク参照処理時にエラーが発生しました`;
                 logger.error(e_msg + e);
@@ -58,8 +62,55 @@ const auto_role_adder = require('./exports/autorole.js'); //役職自動付与�
             }
         }
 
-        if (message.content.startsWith(prefix)) { //「投稿にコマンドのprefixがついていない」 => コマンド処理開始
-            const args = message.content.slice(prefix.length).split(/[ 　]+/); //引数一覧を取得(半角スペースまたは全角スペースで引数を区切る)
+        // エレラボ会計システム連携機能
+        if (message.content.includes('selelab.com/admin/projects/')) {
+            try {
+                const uuid_regex = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/; // ref: https://www.setouchino.cloud/blogs/107
+                const [project_uuid] = message.content.match(uuid_regex);
+                
+                const response = await fetch(`https://selelab.com/api/admin/v1/projects/${project_uuid}`,
+                    {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': accounting_system_token
+                        }
+                    }
+                );
+                if (!response.ok) {
+                    throw new Error(`${response.status} ${response.statusText} ${await response.text()}`);
+                }
+                const project_json = await response.json();
+
+                const project_leader = project_json.leader.display_name;
+                const project_title = project_json.title;
+                const project_description = project_json.description;
+                const project_type = (project_json.accounting_type == "soft") ? "ソフトウェア" : "ハードウェア";
+                const project_status = (project_json.closed === true) ? "完了" : "進行中";
+                const project_approval = (project_json.approvals[0].approved === true) ? "予算承認済み" : "予算未承認";
+                const requested_budget = (project_approval == "予算未承認") ? project_json.sum_req_budget : "N/A";
+
+                const project_embed = new Discord.MessageEmbed()
+                    .setTitle(project_title) //プロジェクト名
+                    .addField('概要', project_description) // プロジェクト概要
+                    .addField('責任者', project_leader, true) //プロジェクトリーダー
+                    .addField('種別', project_type, true)
+                    .addField('状況', project_status, true)
+                    .addField('上限額', project_json.sum_budget, true)
+                    .addField('支出額', project_json.sum_purchase_price, true)
+                    .addField('未承認額', requested_budget, true);
+                
+                message.channel.send(project_embed); //送信
+
+            } catch (e) {
+                const e_msg = `会計システム参照時にエラーが発生しました`;
+                logger.error(e_msg + e);
+                message.channel.send(e_msg);
+            }
+        }
+
+        // コマンド実行機能
+        if (message.content.startsWith(command_prefix)) { //「投稿にコマンドのprefixがついていない」 => コマンド処理開始
+            const args = message.content.slice(command_prefix.length).split(/[ 　]+/); //引数一覧を取得(半角スペースまたは全角スペースで引数を区切る)
             const commandName = args.shift().toLowerCase(); //コマンド名を取得
 
             if (!client.commands.has(commandName)) { //指定されたコマンド名が存在しなかった時の処理
@@ -95,5 +146,5 @@ const auto_role_adder = require('./exports/autorole.js'); //役職自動付与�
         logger.info(`[guildMemberRemove] ${member.user.username}さんがサーバ"${member.guild.name}"から脱退しました`);
     });
 
-    client.login(token); //ログイン
+    client.login(discord_token); //ログイン
 })();
