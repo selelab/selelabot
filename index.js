@@ -1,7 +1,6 @@
 const Discord = require('discord.js');
 const fs = require('fs');
 const log4js = require('log4js');
-const fetch = require('node-fetch');
 
 log4js.configure('./setting/log4js.config.json'); //log4jsの設定の読み込み
 const logger = log4js.getLogger();
@@ -10,6 +9,8 @@ const server_setting = require('./setting/selelab.json'); //各サーバ固有�
 const { discord_token, command_prefix, accounting_system_token } = config;
 
 const auto_role_adder = require('./exports/autorole.js'); //役職自動付与プロトコル用のコード
+const internal_link_referer = require('./exports/internal-link-referer.js'); //サーバ内部リンク参照
+const accounting_system = require('./exports/accounting-system.js'); //エレラボ会計システム連携機能
 
 (async () => {
     const client = new Discord.Client({ //Discordクライアントの作成
@@ -40,74 +41,12 @@ const auto_role_adder = require('./exports/autorole.js'); //役職自動付与�
 
         // サーバ内部リンク参照処理
         if (message.content.includes(`https://discord.com/channels/${message.guild.id}/`) || message.content.includes(`https://discordapp.com/channels/${message.guild.id}/`)) {
-            try {
-                const discord_link = message.content;
-                const discord_link_regex = /([0-9]+)\/([0-9]+)$/;
-                const [, target_channel_id, target_message_id] = discord_link.match(discord_link_regex); //貼られたDiscordサーバ内のリンクから、チャンネルidとメッセージidを取り出す
-            
-                const linked_channel = await message.guild.channels.cache.get(target_channel_id); //チャンネル情報取得
-                const linked_message = await linked_channel.messages.fetch(target_message_id, true, true); //被参照メッセージ情報取得
-                const linked_message_embed = new Discord.MessageEmbed()
-                    .setAuthor(linked_message.author.username, linked_message.author.displayAvatarURL()) //参照先メッセージ投稿者のアイコンと名前
-                    .setDescription(linked_message.content) //メッセージの内容
-                    .setFooter(await linked_channel.name, message.guild.iconURL()) //サーバアイコンとリンク先のチャンネル名
-                    .setTimestamp(linked_message.createdAt); //リンクされたメッセージの投稿日時
-
-                message.channel.send(linked_message_embed); //送信
-
-            } catch (e) {
-                const e_msg = `リンク参照処理時にエラーが発生しました`;
-                logger.error(e_msg + e);
-                message.channel.send(e_msg);
-            }
+            await internal_link_referer.execute(message);
         }
 
-        // エレラボ会計システム連携機能
+        // エレラボ会計システム連携機能（プロジェクト情報の自動展開）
         if (message.content.includes('selelab.com/admin/projects/')) {
-            try {
-                const uuid_regex = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/; // ref: https://www.setouchino.cloud/blogs/107
-                const [project_uuid] = message.content.match(uuid_regex);
-                
-                const response = await fetch(`https://selelab.com/api/admin/v1/projects/${project_uuid}`,
-                    {
-                        method: 'GET',
-                        headers: {
-                            'Authorization': accounting_system_token
-                        }
-                    }
-                );
-                if (!response.ok) {
-                    throw new Error(`${response.status} ${response.statusText} ${await response.text()}`);
-                }
-                const project_json = await response.json();
-
-                const project_leader = project_json.leader.display_name;
-                const project_title = project_json.title;
-                const project_description = project_json.description;
-                const project_type = (project_json.accounting_type == "soft") ? "ソフトウェア" : "ハードウェア";
-                const project_status = (project_json.closed === true) ? "完了" : "進行中";
-                const project_approval = (project_json.approvals[0].approved === true) ? "承認済み" : "未承認";
-                const requested_budget = (project_approval == "未承認") ? project_json.sum_req_budget : "N/A";
-
-                const project_embed = new Discord.MessageEmbed()
-                    .setTitle(project_title) //プロジェクト名
-                    .addField('概要', project_description) // プロジェクト概要
-                    .addField('予算承認状況', project_approval)
-                    .addField('リーダー', project_leader, true) //プロジェクトリーダー
-                    .addField('種別', project_type, true)
-                    .addField('状況', project_status, true)
-                    .addField('上限額', project_json.sum_budget, true)
-                    .addField('支出額', project_json.sum_purchase_price, true)
-                    .addField('未承認額', requested_budget, true)
-                    .setTimestamp(project_json.date_updated); //最終更新時刻
-                
-                message.channel.send(project_embed); //送信
-
-            } catch (e) {
-                const e_msg = `会計システム参照時にエラーが発生しました`;
-                logger.error(e_msg + e);
-                message.channel.send(e_msg);
-            }
+            await accounting_system.execute(message, accounting_system_token);
         }
 
         // コマンド実行機能
