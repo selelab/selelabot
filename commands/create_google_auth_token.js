@@ -6,7 +6,7 @@ const GRANTED_GUILD_ID = "578894382682341376"; // 「SEL運営」のサーバー
 
 const create_token = (secret) =>
   new Promise((resolve, _) => {
-    var b32 = (s) =>
+    const b32 = (s) =>
         [0, 8, 16, 24, 32, 40, 48, 56]
           .map((i) =>
             [0, 1, 2, 3, 4, 5, 6, 7]
