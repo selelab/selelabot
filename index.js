@@ -87,5 +87,8 @@ const accounting_system = require('./exports/accounting-system.js'); //エレラ
         logger.info(`[guildMemberRemove] ${member.user.username}さんがサーバ"${member.guild.name}"から脱退しました`);
     });
 
+    /* エレラボ会計システム連携機能 */
+    await accounting_system.project_creation_notifier(client, accounting_system_token, guild_id);
+
     client.login(discord_token); //ログイン
 })();
