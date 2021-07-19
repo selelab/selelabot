@@ -10,7 +10,7 @@ module.exports = {
         try {
             const uuid_regex = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/; // ref: https://www.setouchino.cloud/blogs/107
             const [project_uuid] = message.content.match(uuid_regex);
-                
+
             const response = await fetch(`https://selelab.com/api/admin/v1/projects/${project_uuid}`,
                 {
                     method: 'GET',
@@ -32,6 +32,7 @@ module.exports = {
 
             const project_embed = new Discord.MessageEmbed()
                 .setTitle(project_title) //プロジェクト名
+                .setURL(`https://selelab.com/admin/projects/${project_uuid}`) //プロジェクトURL
                 .addField('概要', project_description) // プロジェクト概要
                 .addField('予算承認状況', project_approval)
                 .addField('リーダー', project_leader, true) //プロジェクトリーダー
@@ -41,7 +42,7 @@ module.exports = {
                 .addField('支出額', project_json.sum_purchase_price, true)
                 .addField('未承認額', requested_budget, true)
                 .setTimestamp(project_json.date_updated); //最終更新時刻
-                
+
             message.channel.send(project_embed); //送信
 
         } catch (e) {
