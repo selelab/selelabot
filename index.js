@@ -12,6 +12,9 @@ const auto_role_adder = require('./exports/autorole.js'); //役職自動付与�
 const internal_link_referer = require('./exports/internal-link-referer.js'); //サーバ内部リンク参照
 const accounting_system = require('./exports/accounting-system.js'); //エレラボ会計システム連携機能
 
+const redis = require("redis");
+const redis_client = redis.createClient(config.redis_url);
+
 (async () => {
     const client = new Discord.Client({ //Discordクライアントの作成
         ws: {
@@ -19,7 +22,7 @@ const accounting_system = require('./exports/accounting-system.js'); //エレラ
         },
         partials: ['MESSAGE', 'REACTION', 'CHANNEL'], //Partialの設定
     });
-    
+
     /* 別ディレクトリに格納してあるコマンドファイル群関係の記述 */
     client.commands = new Discord.Collection(); //コマンド一覧を格納するためのCollectionを作成
     const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js')); //'./commands'ディレクトリを走査し、中にあるjsファイルの一覧を作成
@@ -88,4 +91,14 @@ const accounting_system = require('./exports/accounting-system.js'); //エレラ
     });
 
     client.login(discord_token); //ログイン
+
+    redis_client.psubscribe('sel_admin.*');
+
+    redis_client.on('pmessage', async(_, event, data) => {
+      if (event === 'sel_admin.project_created') {
+        const project_id = JSON.parse(data).project_id;
+        const discord_channel = client.channels.cache.find(channel => channel.name === 'プロジェクト申請場');
+        await accounting_system.send_project_info(project_id, discord_channel, '新しいプロジェクトが作成されました:tada:');
+      }
+    });
 })();
