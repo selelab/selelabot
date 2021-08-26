@@ -5,10 +5,14 @@
   "main": "index.js",
   "author": "stepney141 <stepney141andi.c.i@gmail.com>",
   "license": "MIT",
+  "scripts": {
+    "start": "nodemon index.js"
+  },
   "dependencies": {
     "discord.js": "^12.5.3",
     "fs": "^0.0.1-security",
     "log4js": "^6.3.0",
-    "puppeteer": "^9.0.0"
+    "puppeteer": "^9.0.0",
+    "redis": "^3.1.2"
   }
 }
