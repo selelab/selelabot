@@ -1,7 +1,7 @@
 const { two_factor_authentication_secret } = require("../setting/env.json");
 const crypto = require("crypto").webcrypto;
 
-const GRANTED_ROLE_NAME = "運営者";
+const GRANTED_ROLE_NAME = "役員";
 const GRANTED_GUILD_ID = "578894382682341376"; // 「SEL運営」のサーバーID
 
 const create_token = (secret) =>
