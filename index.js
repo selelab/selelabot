@@ -1,4 +1,4 @@
-const { Discord, Intents} = require('discord.js');
+const { Client, Intents, Collection } = require('discord.js');
 const fs = require('fs');
 const log4js = require('log4js');
 
@@ -16,13 +16,13 @@ const redis = require("redis");
 const redis_client = redis.createClient(config.redis_url);
 
 (async () => {
-    const client = new Discord.Client({ //Discordクライアントの作成
+    const client = new Client({ //Discordクライアントの作成
         intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MEMBERS, Intents.FLAGS.GUILD_PRESENCES], //Gateway Intentの有効化・指定
         partials: ['MESSAGE', 'REACTION', 'CHANNEL'], //Partialの設定
     });
 
     /* 別ディレクトリに格納してあるコマンドファイル群関係の記述 */
-    client.commands = new Discord.Collection(); //コマンド一覧を格納するためのCollectionを作成
+    client.commands = new Collection(); //コマンド一覧を格納するためのCollectionを作成
     const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js')); //'./commands'ディレクトリを走査し、中にあるjsファイルの一覧を作成
     for (const file of commandFiles) {
         const command = require(`./commands/${file}`); //各ファイルからコマンドの情報を読み込む
