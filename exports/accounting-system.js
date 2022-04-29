@@ -41,14 +41,14 @@ const send_project_info = async (project_uuid, channel, comment) => {
         const project_embed = new Discord.MessageEmbed()
             .setTitle(project_title) //プロジェクト名
             .setURL(`${selelab.scheme}://${selelab.host}/admin/projects/${project_uuid}`) //プロジェクトURL
-            .addField("概要", project_description) // プロジェクト概要
-            .addField("予算承認状況", project_approval)
-            .addField("リーダー", project_leader, true) //プロジェクトリーダー
-            .addField("種別", project_type, true)
-            .addField("状況", project_status, true)
-            .addField("上限額", project_json.sum_budget, true)
-            .addField("支出額", project_json.sum_purchase_price, true)
-            .addField("未承認額", requested_budget, true)
+            .addField({name: "概要", value: project_description}) // プロジェクト概要
+            .addField({name: "予算承認状況", value: project_approval})
+            .addField({name: "リーダー", value: project_leader, inline: true}) //プロジェクトリーダー
+            .addField({name: "種別", value: project_type, inline: true})
+            .addField({name: "状況", value: project_status, inline: true})
+            .addField({name: "上限額", value: project_json.sum_budget, inline: true})
+            .addField({name: "支出額", value: project_json.sum_purchase_price, inline: true})
+            .addField({name: "未承認額", value: requested_budget, inline: true})
             .setTimestamp(project_json.date_updated); //最終更新時刻
 
         if (comment) {
