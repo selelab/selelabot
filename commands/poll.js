@@ -65,7 +65,7 @@ module.exports = {
 
             const poll_finished = await message.channel.messages.fetch(poll.id, true, true); //投票終了
             const poll_results = emojis.slice(0, choices.length).map(emoji => `${emoji} ${poll_finished.reactions.cache.get(emoji).count - 1}票`); //投票結果の集計
-            poll_embed.addField(":fire:投票結果:fire:", poll_results.join('\n')) //埋め込みメッセージに集計結果を書き込み
+            poll_embed.addField({name: ":fire:投票結果:fire:", value: poll_results.join('\n')}) //埋め込みメッセージに集計結果を書き込み
                 .setFooter({text: "この投票は締め切られました。"})
                 .setTimestamp();
             poll_finished.edit({
