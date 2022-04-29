@@ -71,7 +71,7 @@ const redis_client = createClient(config.redis_url);
                     logger.info(`[message] コマンド "${commandName}" が実行されました`);
                 } catch (e) { //エラーハンドリング
                     const e_msg = `コマンド "${commandName}" 実行時にエラーが発生しました`;
-                    logger.error(e_msg + e);
+                    logger.error(e_msg + e + 'line' + e.lineNumber);
                     message.reply({
                         content: e_msg,
                         allowedMentions: { repliedUser: true }

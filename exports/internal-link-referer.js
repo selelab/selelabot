@@ -29,7 +29,7 @@ module.exports = {
 
         } catch (e) {
             const e_msg = `リンク参照処理時にエラーが発生しました`;
-            logger.error(e_msg + e);
+            logger.error(e_msg + e + 'line' + e.lineNumber);
             message.channel.send(e_msg);
         }
     }

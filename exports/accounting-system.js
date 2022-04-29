@@ -58,7 +58,7 @@ const send_project_info = async (project_uuid, channel, comment) => {
         }
     } catch (e) {
         const e_msg = `会計システム参照時にエラーが発生しました`;
-        logger.error(e_msg + e);
+        logger.error(e_msg + e + 'line' + e.lineNumber);
         channel.send(e_msg);
     }
 };

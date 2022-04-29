@@ -75,7 +75,7 @@ module.exports = {
             logger.info(`[!poll] ${message.author.username}が開始した投票"${title}"が終了しました`);
 
         } catch (e) {
-            logger.error('[poll] ' + e);
+            logger.error('[poll] ' + e + 'line' + e.lineNumber);
             message.channel.send('処理中にエラーが発生しました');
         }
     },
