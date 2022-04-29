@@ -21,26 +21,25 @@
 
 ## 必要なもの
 
-- Node.js (v14推奨)
-- yarn (v1.22.10以上)
+- Node.js (v16.6以上)
+- nvm (0.39.1で動作確認)
 - ご家庭にあるNode.js対応の適当なプロセスマネージャ（エレラボサーバではpm2を採用）
 
 ## 環境構築
 
-pm2の場合：
-
+1. Node.jsを導入
+2. nvmを導入 ([導入方法](https://github.com/nvm-sh/nvm#installing-and-updating))
+3. 以下を実行
 ```
 $ git clone https://github.com/selelab/selelabot
 $ cd selelabot
-$ yarn
+$ npm install
 $ npm install pm2 -g
+$ nvm use
 ```
-
-※最後の行はpm2がグローバルで入りさえすりゃいいのでyarnでも良い
-
 ## 実行方法
 
-カレントディレクトリが``selelabot``の時：
+※pm2の利用を仮定、カレントディレクトリが``selelabot``の時：
 
 ```
 $ pm2 start index.js --name selelabot-discord
