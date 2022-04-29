@@ -1,4 +1,4 @@
-const Discord = require('discord.js');
+const { Discord, Intents} = require('discord.js');
 const fs = require('fs');
 const log4js = require('log4js');
 
@@ -17,9 +17,7 @@ const redis_client = redis.createClient(config.redis_url);
 
 (async () => {
     const client = new Discord.Client({ //Discordクライアントの作成
-        ws: {
-            intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MEMBERS', 'GUILD_PRESENCES'] //Gateway Intentの有効化・指定
-        },
+        intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MEMBERS, Intents.FLAGS.GUILD_PRESENCES], //Gateway Intentの有効化・指定
         partials: ['MESSAGE', 'REACTION', 'CHANNEL'], //Partialの設定
     });
 
@@ -37,7 +35,7 @@ const redis_client = redis.createClient(config.redis_url);
     });
 
     /* サーバに新規書き込みがあった際の動作 */
-    client.on('message', async (message) => {
+    client.on('messageCreate', async (message) => {
         /* サーバへの新規書き込みを取得し、それがbotへの命令であったならば、指定された処理を実行する */
 
         if (message.author.bot) return; //「botによる投稿である」 => 無視
@@ -58,7 +56,10 @@ const redis_client = redis.createClient(config.redis_url);
             const commandName = args.shift().toLowerCase(); //コマンド名を取得
 
             if (!client.commands.has(commandName)) { //指定されたコマンド名が存在しなかった時の処理
-                return message.reply(`コマンド "${commandName}" は存在しません`);
+                return message.reply({
+                    content: `コマンド "${commandName}" は存在しません`,
+                    allowedMentions: { repliedUser: true }
+                });
             }
 
             const command = client.commands.get(commandName); //コマンドオブジェクトを代入
@@ -69,7 +70,10 @@ const redis_client = redis.createClient(config.redis_url);
             } catch (e) { //エラーハンドリング
                 const e_msg = `コマンド "${commandName}" 実行時にエラーが発生しました`;
                 logger.error(e_msg + e);
-                message.reply(e_msg);
+                message.reply({
+                    content: e_msg,
+                    allowedMentions: { repliedUser: true }
+                });
             }
         }
     });
@@ -95,10 +99,10 @@ const redis_client = redis.createClient(config.redis_url);
     redis_client.psubscribe('sel_admin.*');
 
     redis_client.on('pmessage', async(_, event, data) => {
-      if (event === 'sel_admin.project_created') {
-        const project_id = JSON.parse(data).project_id;
-        const discord_channel = client.channels.cache.find(channel => channel.name === 'プロジェクト申請場');
-        await accounting_system.send_project_info(project_id, discord_channel, '新しいプロジェクトが作成されました:tada:');
-      }
+        if (event === 'sel_admin.project_created') {
+            const project_id = JSON.parse(data).project_id;
+            const discord_channel = client.channels.cache.find(channel => channel.name === 'プロジェクト申請場');
+            await accounting_system.send_project_info(project_id, discord_channel, '新しいプロジェクトが作成されました:tada:');
+        }
     });
 })();
