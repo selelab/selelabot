@@ -1,10 +1,11 @@
 const { Client, Intents, Collection } = require('discord.js');
 const fs = require('fs');
+const path = require('path');
 const log4js = require('log4js');
 
-log4js.configure('./setting/log4js.config.json'); //log4jsの設定の読み込み
+log4js.configure(path.join(__dirname, 'setting/log4js.config.json')); //log4jsの設定の読み込み
 const logger = log4js.getLogger();
-const config = require('./setting/env.json'); //ログイン情報類の読み込み
+const config = require(path.join(__dirname, 'setting/env.json')); //ログイン情報類の読み込み
 const server_setting = require('./setting/selelab.json'); //各サーバ固有の設定の読み込み
 const { discord_token, command_prefix, accounting_system_token } = config;
 
@@ -12,8 +13,8 @@ const auto_role_adder = require('./exports/autorole.js'); //役職自動付与�
 const internal_link_referer = require('./exports/internal-link-referer.js'); //サーバ内部リンク参照
 const accounting_system = require('./exports/accounting-system.js'); //エレラボ会計システム連携機能
 
-const redis = require("redis");
-const redis_client = redis.createClient(config.redis_url);
+const { createClient } = require("redis");
+const redis_client = createClient(config.redis_url);
 
 (async () => {
     try {
@@ -97,7 +98,7 @@ const redis_client = redis.createClient(config.redis_url);
 
         client.login(discord_token); //ログイン
 
-        redis_client.psubscribe('sel_admin.*');
+        redis_client.pSubscribe('sel_admin.*');
 
         redis_client.on('pmessage', async(_, event, data) => {
             if (event === 'sel_admin.project_created') {
