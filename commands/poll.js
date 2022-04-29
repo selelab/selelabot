@@ -28,26 +28,32 @@ module.exports = {
 
             const poll_embed = new Discord.MessageEmbed()
                 .setTitle(title)
-                .setAuthor(message.author.username, message.author.displayAvatarURL()) //投票作成者のアイコンと名前
+                .setAuthor({
+                    name: message.author.username,
+                    iconURL: message.author.displayAvatarURL()
+                }) //投票作成者のアイコンと名前
                 .setDescription(choices.map((c, i) => `${emojis[i]} ${c}`).join('\n')) //投票の選択肢
                 .setTimestamp();
         
             if (time) {
                 if (time == 0) {
-                    poll_embed.setFooter('この投票は無期限です');
+                    poll_embed.setFooter({text: 'この投票は無期限です'});
                 } else {
                     if (time > 60) {
                         const hour = Math.floor(time / 60);
                         const minute = time % 60;
                         const minute_fixed = (minute == 0) ? '' : `${minute}分`;
-                        poll_embed.setFooter(`この投票は、開始時刻から${hour}時間${minute_fixed}後に締め切られます`);
+                        poll_embed.setFooter({text: `この投票は、開始時刻から${hour}時間${minute_fixed}後に締め切られます`});
                     } else {
-                        poll_embed.setFooter(`この投票は、開始時刻から${time}分後に締め切られます`);
+                        poll_embed.setFooter({text: `この投票は、開始時刻から${time}分後に締め切られます`});
                     }
                 }
             }
             
-            const poll = await message.channel.send("投票が開始されました！", poll_embed); //投票開始
+            const poll = await message.channel.send({
+                content: "投票が開始されました！",
+                embeds: [poll_embed]
+            }); //投票開始
             logger.info(`[!poll] ${message.author.username}が投票"${title}"を開始しました`);
             emojis.slice(0, choices.length).forEach(emoji => poll.react(emoji)); //リアクション付与
             
@@ -60,9 +66,12 @@ module.exports = {
             const poll_finished = await message.channel.messages.fetch(poll.id, true, true); //投票終了
             const poll_results = emojis.slice(0, choices.length).map(emoji => `${emoji} ${poll_finished.reactions.cache.get(emoji).count - 1}票`); //投票結果の集計
             poll_embed.addField(":fire:投票結果:fire:", poll_results.join('\n')) //埋め込みメッセージに集計結果を書き込み
-                .setFooter("この投票は締め切られました。")
+                .setFooter({text: "この投票は締め切られました。"})
                 .setTimestamp();
-            poll_finished.edit("", poll_embed); //メッセージを編集して集計結果をDiscord上に反映
+            poll_finished.edit({
+                content: "",
+                embeds: [poll_embed]
+            }); //メッセージを編集して集計結果をDiscord上に反映
             logger.info(`[!poll] ${message.author.username}が開始した投票"${title}"が終了しました`);
 
         } catch (e) {

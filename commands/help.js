@@ -22,12 +22,18 @@ module.exports = {
 
             return message.author.send(data, { split: true })
                 .then(() => {
-                    if (message.channel.type === 'dm') return;
-                    message.reply('I\'ve sent you a DM with all my commands!');
+                    if (message.channel.type === 'DM') return;
+                    message.reply({
+                        content: 'I\'ve sent you a DM with all my commands!',
+                        allowedMentions: { repliedUser: true }
+                    });
                 })
                 .catch(error => {
                     logger.error(`Could not send help DM to ${message.author.tag}.\n`, error);
-                    message.reply('it seems like I can\'t DM you! Do you have DMs disabled?');
+                    message.reply({
+                        content: 'it seems like I can\'t DM you! Do you have DMs disabled?',
+                        allowedMentions: { repliedUser: true }
+                    });
                 });
         }
 
@@ -35,7 +41,10 @@ module.exports = {
         const command = commands.get(name) || commands.find(c => c.aliases && c.aliases.includes(name));
 
         if (!command) {
-            return message.reply('that\'s not a valid command!');
+            return message.reply({
+                content: 'that\'s not a valid command!',
+                allowedMentions: { repliedUser: true }
+            });
         }
 
         data.push(`**Name:** ${command.name}`);

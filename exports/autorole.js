@@ -73,7 +73,7 @@ module.exports = {
                 { name: `${server_setting.GRADE.FOURTH}なら`, value: '4 と入力' },
                 { name: `${server_setting.GRADE.GRADUATED}なら`, value: '5 と入力' },
             );
-        welcomeChannel.send(gradeEmbed);
+        welcomeChannel.send({embeds: [gradeEmbed]});
 
         // ユーザーの入力を受け取り、処理する
         const msgFilter_Q2 = msg => {
@@ -106,6 +106,9 @@ module.exports = {
             welcomeChannel.send("Q2の処理中にエラーが発生しました");
         }
         /* Q2. 終了 */
+
+        welcomeChannel.send(`質問は以上です。ありがとうございました。
+        #自己紹介 チャンネルへの書き込みもよろしくお願いします！`);
         
         logger.info("[guildMemberAdd] 役職自動付与プロトコル：終了");
         /* 役職付与プロトコル終了 */
