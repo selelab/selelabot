@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const log4js = require('log4js');
 
-log4js.configure(path.join(__dirname, 'setting/log4js.config.json')); //log4jsの設定の読み込み
+log4js.configure(path.join(__dirname, './setting/log4js.config.json')); //log4jsの設定の読み込み
 const logger = log4js.getLogger();
 const config = require(path.join(__dirname, 'setting/env.json')); //ログイン情報類の読み込み
 const server_setting = require('./setting/selelab.json'); //各サーバ固有の設定の読み込み

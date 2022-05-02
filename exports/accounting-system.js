@@ -1,9 +1,10 @@
 const Discord = require("discord.js");
 const log4js = require("log4js");
 const fetch = require("node-fetch");
+const path = require('path');
 
 const { accounting_system_token, selelab } = require("../setting/env.json");
-log4js.configure("./setting/log4js.config.json"); //log4jsの設定の読み込み
+log4js.configure(path.join(__dirname, "../setting/log4js.config.json")); //log4jsの設定の読み込み
 const logger = log4js.getLogger();
 
 const send_project_info = async (project_uuid, channel, comment) => {

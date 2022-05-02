@@ -1,7 +1,8 @@
 const Discord = require('discord.js');
 const log4js = require('log4js');
+const path = require('path');
 
-log4js.configure('./setting/log4js.config.json'); //log4jsの設定の読み込み
+log4js.configure(path.join(__dirname, "../setting/log4js.config.json")); //log4jsの設定の読み込み
 const logger = log4js.getLogger();
 const server_setting = require('../setting/selelab.json'); //各サーバ固有の設定の読み込み
 

@@ -1,7 +1,8 @@
 const Discord = require('discord.js');
 const log4js = require('log4js');
+const path = require('path');
 
-log4js.configure('./setting/log4js.config.json'); //log4jsの設定の読み込み
+log4js.configure(path.join(__dirname, "../setting/log4js.config.json")); //log4jsの設定の読み込み
 const logger = log4js.getLogger();
 const sleep = async (seconds) => new Promise((resolve, reject) => { setTimeout(() => { resolve(); }, seconds * 1000); }); /* 一定時間だけ非同期で処理を待つ(単位：秒) */
 
@@ -75,7 +76,7 @@ module.exports = {
             logger.info(`[!poll] ${message.author.username}が開始した投票"${title}"が終了しました`);
 
         } catch (e) {
-            logger.error('[poll] ' + e + 'line' + e.lineNumber);
+            logger.error(`[poll] ${e}`);
             message.channel.send('処理中にエラーが発生しました');
         }
     },
