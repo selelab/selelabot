@@ -14,7 +14,10 @@ const internal_link_referer = require('./exports/internal-link-referer.js'); //�
 const accounting_system = require('./exports/accounting-system.js'); //エレラボ会計システム連携機能
 
 const { createClient } = require("redis");
-const redis_client = createClient(config.redis_url);
+const redis_client = createClient({
+    url: config.redis_url,
+    legacyMode: true
+});
 
 (async () => {
     try {
@@ -96,17 +99,18 @@ const redis_client = createClient(config.redis_url);
             logger.info(`[guildMemberRemove] ${member.user.username}さんがサーバ"${member.guild.name}"から脱退しました`);
         });
 
-        client.login(discord_token); //ログイン
+        // await redis_client.connect();
 
-        redis_client.pSubscribe('sel_admin.*');
+        // await redis_client.pSubscribe('sel_admin.*');
 
-        redis_client.on('pmessage', async(_, event, data) => {
-            if (event === 'sel_admin.project_created') {
-                const project_id = JSON.parse(data).project_id;
-                const discord_channel = client.channels.cache.find(channel => channel.name === 'プロジェクト申請場');
-                await accounting_system.send_project_info(project_id, discord_channel, '新しいプロジェクトが作成されました:tada:');
-            }
-        });
+        // redis_client.on('pmessage', async(_, event, data) => {
+        //     if (event === 'sel_admin.project_created') {
+        //         const project_id = JSON.parse(data).project_id;
+        //         const discord_channel = discord_client.channels.cache.find(channel => channel.name === 'プロジェクト申請場');
+        //         await accounting_system.send_project_info(project_id, discord_channel, '新しいプロジェクトが作成されました:tada:');
+        //     }
+        // });
+
     } catch (e) {
         console.log(e);
     }
