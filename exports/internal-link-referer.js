@@ -1,4 +1,4 @@
-const Discord = require('discord.js');
+const { MessageEmbed } = require('discord.js');
 const log4js = require('log4js');
 const path = require('path');
 
@@ -14,7 +14,7 @@ module.exports = {
             
             const linked_channel = await message.guild.channels.cache.get(target_channel_id); //チャンネル情報取得
             const linked_message = await linked_channel.messages.fetch(target_message_id, true, true); //被参照メッセージ情報取得
-            const linked_message_embed = new Discord.MessageEmbed()
+            const linked_message_embed = new MessageEmbed()
                 .setAuthor({
                     name: linked_message.author.username,
                     iconURL: linked_message.author.displayAvatarURL()
@@ -30,8 +30,8 @@ module.exports = {
 
         } catch (e) {
             const e_msg = `リンク参照処理時にエラーが発生しました`;
-            logger.error(e_msg + e + 'line' + e.lineNumber);
-            message.channel.send(e_msg);
+            logger.error(`${e_msg}:${e}`);
+            message.channel.send(`${e_msg}:${e}`);
         }
     }
 };
