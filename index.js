@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const log4js = require('log4js');
 
-log4js.configure(path.join(__dirname, 'setting/log4js.config.json')); //log4jsの設定の読み込み
+log4js.configure(path.join(__dirname, './setting/log4js.config.json')); //log4jsの設定の読み込み
 const logger = log4js.getLogger();
 const config = require(path.join(__dirname, 'setting/env.json')); //ログイン情報類の読み込み
 const server_setting = require('./setting/selelab.json'); //各サーバ固有の設定の読み込み
@@ -14,30 +14,33 @@ const internal_link_referer = require('./exports/internal-link-referer.js'); //�
 const accounting_system = require('./exports/accounting-system.js'); //エレラボ会計システム連携機能
 
 const { createClient } = require("redis");
-const redis_client = createClient(config.redis_url);
+const redis_client = createClient({
+    url: config.redis_url,
+    legacyMode: true
+});
 
 (async () => {
     try {
-        const client = new Client({ //Discordクライアントの作成
+        const discord_client = new Client({ //Discordクライアントの作成
             intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MEMBERS, Intents.FLAGS.GUILD_PRESENCES], //Gateway Intentの有効化・指定
             partials: ['MESSAGE', 'REACTION', 'CHANNEL'], //Partialの設定
         });
 
         /* 別ディレクトリに格納してあるコマンドファイル群関係の記述 */
-        client.commands = new Collection(); //コマンド一覧を格納するためのCollectionを作成
+        discord_client.commands = new Collection(); //コマンド一覧を格納するためのCollectionを作成
         const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js')); //'./commands'ディレクトリを走査し、中にあるjsファイルの一覧を作成
         for (const file of commandFiles) {
             const command = require(`./commands/${file}`); //各ファイルからコマンドの情報を読み込む
-            client.commands.set(command.name, command); //読み込んだコマンドをセット
+            discord_client.commands.set(command.name, command); //読み込んだコマンドをセット
         }
 
         /* クライアントが準備完了した際の動作 */
-        client.once('ready', () => {
+        discord_client.once('ready', () => {
             logger.info("[ready] クライアント作成完了");
         });
 
         /* サーバに新規書き込みがあった際の動作 */
-        client.on('messageCreate', async (message) => {
+        discord_client.on('messageCreate', async (message) => {
         /* サーバへの新規書き込みを取得し、それがbotへの命令であったならば、指定された処理を実行する */
 
             if (message.author.bot) return; //「botによる投稿である」 => 無視
@@ -53,27 +56,27 @@ const redis_client = createClient(config.redis_url);
             }
 
             // コマンド実行機能
-            if (message.content.startsWith(command_prefix)) { //「投稿にコマンドのprefixがついていない」 => コマンド処理開始
+            if (message.content.startsWith(command_prefix)) { //「投稿にコマンドのprefixがついている」 => コマンド処理開始
                 const args = message.content.slice(command_prefix.length).split(/[ 　]+/); //引数一覧を取得(半角スペースまたは全角スペースで引数を区切る)
                 const commandName = args.shift().toLowerCase(); //コマンド名を取得
 
-                if (!client.commands.has(commandName)) { //指定されたコマンド名が存在しなかった時の処理
+                if (!discord_client.commands.has(commandName)) { //指定されたコマンド名が存在しなかった時の処理
                     return message.reply({
                         content: `コマンド "${commandName}" は存在しません`,
                         allowedMentions: { repliedUser: true }
                     });
                 }
 
-                const command = client.commands.get(commandName); //コマンドオブジェクトを代入
+                const command = discord_client.commands.get(commandName); //コマンドオブジェクトを代入
 
                 try {
                     command.execute(message, args); //コマンドを実行
                     logger.info(`[message] コマンド "${commandName}" が実行されました`);
                 } catch (e) { //エラーハンドリング
                     const e_msg = `コマンド "${commandName}" 実行時にエラーが発生しました`;
-                    logger.error(e_msg + e + 'line' + e.lineNumber);
+                    logger.error(`${e_msg}:${e}`);
                     message.reply({
-                        content: e_msg,
+                        content: `${e_msg}:${e}`,
                         allowedMentions: { repliedUser: true }
                     });
                 }
@@ -81,14 +84,14 @@ const redis_client = createClient(config.redis_url);
         });
 
         /* サーバに誰かが新規参加した時の動作 */
-        client.on('guildMemberAdd', (member) => {
-            auto_role_adder.execute(client, member, member.guild.id); //役職自動付与プロトコル
+        discord_client.on('guildMemberAdd', (member) => {
+            auto_role_adder.execute(discord_client, member, member.guild.id); //役職自動付与プロトコル
         });
 
         /* サーバから誰かが脱退した時の動作 */
-        client.on('guildMemberRemove', (member) => {
+        discord_client.on('guildMemberRemove', (member) => {
         // 設定ファイルで指定されたチャンネルに脱退者の通知を送信
-            const infoChannel = client.guilds.cache.get(member.guild.id).channels.cache.find(channel => channel.name === server_setting.CHANNEL.INFO);
+            const infoChannel = discord_client.guilds.cache.get(member.guild.id).channels.cache.find(channel => channel.name === server_setting.CHANNEL.INFO);
             if (!infoChannel) {
                 return logger.error("[guildMemberRemove] 該当するチャンネルが見つかりませんでした");
             }
@@ -96,17 +99,20 @@ const redis_client = createClient(config.redis_url);
             logger.info(`[guildMemberRemove] ${member.user.username}さんがサーバ"${member.guild.name}"から脱退しました`);
         });
 
-        client.login(discord_token); //ログイン
+        discord_client.login(discord_token); //ログイン
 
-        redis_client.pSubscribe('sel_admin.*');
+        // await redis_client.connect();
 
-        redis_client.on('pmessage', async(_, event, data) => {
-            if (event === 'sel_admin.project_created') {
-                const project_id = JSON.parse(data).project_id;
-                const discord_channel = client.channels.cache.find(channel => channel.name === 'プロジェクト申請場');
-                await accounting_system.send_project_info(project_id, discord_channel, '新しいプロジェクトが作成されました:tada:');
-            }
-        });
+        // await redis_client.pSubscribe('sel_admin.*');
+
+        // redis_client.on('pmessage', async(_, event, data) => {
+        //     if (event === 'sel_admin.project_created') {
+        //         const project_id = JSON.parse(data).project_id;
+        //         const discord_channel = discord_client.channels.cache.find(channel => channel.name === 'プロジェクト申請場');
+        //         await accounting_system.send_project_info(project_id, discord_channel, '新しいプロジェクトが作成されました:tada:');
+        //     }
+        // });
+
     } catch (e) {
         console.log(e);
     }

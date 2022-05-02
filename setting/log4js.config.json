@@ -4,7 +4,7 @@
             "type": "stdout"
         },
         "app": {
-            "type": "file",
+            "type": "fileSync",
             "filename": "logs/selelabot.log",
             "pattern": "yyyyMMdd-hhmmss"
         }
