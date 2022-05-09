@@ -13,10 +13,9 @@ const question_no1 = async (welcomeChannel, member) => {
         welcomeChannel.send(`Q1. ${member}さん、あなたは本サークルへの入会願を既に提出していますか？
         提出しているなら「はい」、提出していないなら「いいえ」と、ここに投稿して下さい！`);
 
-        const msgFilter_Q1 = msg => {
-            return (msg.author.id === member.id && msg.content.match(/^(はい|いいえ)$/g)) ? true : false;
-            //「新しく参加したメンバーの投稿である」かつ「"はい"または"いいえ"のみの投稿である」 => 条件に合致
-        };
+        const msgFilter_Q1 = msg => (msg.author.id === member.id && msg.content.match(/^(はい|いいえ)$/g));
+        //「新しく参加したメンバーの投稿である」かつ「"はい"または"いいえ"のみの投稿である」 => 条件に合致
+        
         const collected_message_Q1 = await welcomeChannel.awaitMessages({ filter: msgFilter_Q1, max: 1, time: 5 * 60 * 1000 });
         // Promiseを解決すると、収集できたメッセージのCollectionを得られる
 
